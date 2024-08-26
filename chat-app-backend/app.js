@@ -6,6 +6,12 @@ const socketIo = require('socket.io');
 const server =  http.createServer(app);
 const io = socketIo(server);
 
+app.use(cors());
+
+require('dotenv').config()
+
+const port = process.env.PORT || 3000;
+
 let users = {};
 let group = {};
 
@@ -20,18 +26,27 @@ io.on('connection',(socket)=>
     {
         users[socket.id] = {userName : data.userName , status:'active'}
         io.emit('user-list',Object.values(users))
+    });
+
+    socket.on('send-message',(data)=>
+    {
+        if(data.toGroup)
+        {
+            io.to(data.toGroup).emit('new-message',{
+
+                from : users[socket.id].userName ,
+                message : data.message
+            })
+        }
+        else
+        {
+            io.to(data.toUser).emit('new message',{
+                from : users[socket.id].userName , 
+                message : data.message
+            })
+        }
     })
 })
-
-
-app.use(cors());
-
-require('dotenv').config()
-
-const port = process.env.PORT || 3000;
-
-
-
 //-------------------------------------server start----------------------------------
 app.listen(port,()=>
 {
